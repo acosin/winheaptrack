@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 // Inject a DLL into the target process by creating a new thread at LoadLibrary
 // Waits for injected thread to finish and returns its exit code.
