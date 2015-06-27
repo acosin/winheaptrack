@@ -62,7 +62,7 @@ void * __cdecl mallocHook(size_t size){
 	void * p = originalMallocs[N](size);
 	if(preventSelfProfile.shouldProfile()){
 		StackTrace trace;
-		trace.trace();
+		trace.trace(heapProfiler->data);
 		heapProfiler->malloc(p, size, trace);
 	}
 
@@ -77,7 +77,7 @@ void  __cdecl freeHook(void * p){
 	originalFrees[N](p);
 	if(preventSelfProfile.shouldProfile()){
 		StackTrace trace;
-		trace.trace();
+		trace.trace(heapProfiler->data);
 		heapProfiler->free(p, trace);
 	}
 }
@@ -104,7 +104,7 @@ BOOL CALLBACK enumSymbolsCallback(PSYMBOL_INFO symbolInfo, ULONG symbolSize, PVO
 	PreventSelfProfile preventSelfProfile;
 
 	PCSTR moduleName = (PCSTR)userContext;
-	
+
 	// Hook mallocs.
 	if(strcmp(symbolInfo->Name, "malloc") == 0){
 		if(nUsedMallocHooks >= numHooks){
@@ -119,7 +119,6 @@ BOOL CALLBACK enumSymbolsCallback(PSYMBOL_INFO symbolInfo, ULONG symbolSize, PVO
 		if(MH_EnableHook((void*)symbolInfo->Address) != MH_OK){
 			printf("Enable malloc hook failed!\n");
 		}
-
 		nUsedMallocHooks++;
 	}
 
@@ -155,80 +154,6 @@ BOOL CALLBACK enumModulesCallback(PCSTR ModuleName, DWORD_PTR BaseOfDll, PVOID U
 	return true;
 }
 
-void printTopAllocationReport(int numToPrint){
-
-	std::vector<std::pair<StackTrace, size_t>> allocsSortedBySize;
-	heapProfiler->getAllocationSiteReport(allocsSortedBySize);
-
-	// Sort retured allocation sites by size of memory allocated, descending.
-	std::sort(allocsSortedBySize.begin(), allocsSortedBySize.end(), 
-		[](const std::pair<StackTrace, size_t> &a, const std::pair<StackTrace, size_t> &b){
-			return a.second < b.second;
-		}
-	);
-	
-
-	std::ofstream stream("Heapy_Profile.txt",  std::ios::out | std::ios::app);
-	stream << "=======================================\n\n";
-	stream << "Printing top allocation points.\n\n";
-	// Print top allocations sites in ascending order.
-	auto precision = std::setprecision(5);
-	size_t totalPrintedAllocSize = 0;
-	size_t numPrintedAllocations = 0;
-	double bytesInAMegaByte = 1024*1024;
-	for(size_t i = (size_t)(std::max)(int64_t(allocsSortedBySize.size())-numToPrint, int64_t(0)); i < allocsSortedBySize.size(); ++i){
-
-		if(allocsSortedBySize[i].second == 0)
-			continue;
-
-		stream << "Alloc size " << precision << allocsSortedBySize[i].second/bytesInAMegaByte << "Mb, stack trace: \n";
-		allocsSortedBySize[i].first.print(stream);
-		stream << "\n";
-
-		totalPrintedAllocSize += allocsSortedBySize[i].second;
-		numPrintedAllocations++;
-	}
-
-	size_t totalAlloctaions = std::accumulate(allocsSortedBySize.begin(), allocsSortedBySize.end(), size_t(0),
-		[](size_t a,  const std::pair<StackTrace, size_t> &b){
-			return a + b.second;
-		}
-	);
-
-	stream << "Top " << numPrintedAllocations << " allocations: " << precision <<  totalPrintedAllocSize/bytesInAMegaByte << "Mb\n";
-	stream << "Total allocations: " << precision << totalAlloctaions/bytesInAMegaByte << "Mb" << 
-		" (difference between total and top " << numPrintedAllocations << " allocations : " << (totalAlloctaions - totalPrintedAllocSize)/bytesInAMegaByte << "Mb)\n\n";
-}
-
-// Do an allocation report on exit.
-// Static data deconstructors are supposed to be called in reverse order of the construction.
-// (According to the C++ spec.)
-// 
-// So this /should/ be called after the staic deconstructors of the injectee application.
-// Probably by whatever thread is calling exit. 
-// 
-// We are well out of the normal use cases here and I wouldn't be suprised if this mechanism
-// breaks down in practice. I'm not even that interested in leak detection on exit anyway.
-// 
-// Also: The end game will be send malloc/free information to a different
-// process instead of doing reports the same process - then shutdown issues go away.
-// But for now it's more fun to work inside the injected process.
-struct CatchExit{
-	~CatchExit(){
-		PreventSelfProfile p;
-		printTopAllocationReport(25);
-	}
-};
-CatchExit catchExit;
-
-int heapProfileReportThread(){
-	PreventEverProfilingThisThread();
-	while(true){
-		Sleep(10000); 
-		printTopAllocationReport(25);
-	}
-}
-
 void setupHeapProfiling(){
 	// We use printfs thoughout injection becasue it's just safer/less troublesome
 	// than iostreams for this sort of low-level/hacky/threaded work.
@@ -255,21 +180,6 @@ void setupHeapProfiling(){
 
 	// Trawl though loaded modules and hook any mallocs and frees we find.
 	SymEnumerateModules(GetCurrentProcess(), enumModulesCallback, NULL);
-
-	// Spawn and a new thread which prints allocation report every 10 seconds.
-	//
-	// We can't use std::thread here because of deadlock issues which can happen 
-	// when creating a thread in dllmain.
-	// Some background: http://blogs.msdn.com/b/oldnewthing/archive/2007/09/04/4731478.aspx
-	//
-	// We have to create a new thread because we "signal" back to the injector that it is
-	// safe to resume the injectees main thread by terminating the injected thread.
-	// (The injected thread ran LoadLibrary so got us unti DllMain DLL_PROCESS_ATTACH.)
-	//
-	// TODO: Could we signal a different way, or awake the main thread from the dll thread
-	// and do the reports from the injeted thread. This was what EasyHook was doing.
-	// I feel like that might have some benefits (more stable?)
-	CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&heapProfileReportThread, NULL, 0, NULL);
 }
 
 extern "C"{
