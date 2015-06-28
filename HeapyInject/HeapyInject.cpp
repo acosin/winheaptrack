@@ -148,7 +148,8 @@ BOOL CALLBACK enumModulesCallback(PCSTR ModuleName, DWORD_PTR BaseOfDll, PVOID U
 	// TODO: Hooking msvcrt causes problems with cleaning up stdio - avoid for now.
 	if(strcmp(ModuleName, "msvcrt") == 0) 
 		return true;
-
+	ProfileData* data = (ProfileData*)UserContext;
+	data->intern(ModuleName);
 	SymEnumSymbols(GetCurrentProcess(), BaseOfDll, "malloc", enumSymbolsCallback, (void*)ModuleName);
 	SymEnumSymbols(GetCurrentProcess(), BaseOfDll, "free", enumSymbolsCallback, (void*)ModuleName);
 	return true;
@@ -179,7 +180,7 @@ void setupHeapProfiling(){
 	heapProfiler = new HeapProfiler(); 
 
 	// Trawl though loaded modules and hook any mallocs and frees we find.
-	SymEnumerateModules(GetCurrentProcess(), enumModulesCallback, NULL);
+	SymEnumerateModules(GetCurrentProcess(), enumModulesCallback, &heapProfiler->data);
 	heapProfiler->data.start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
 
