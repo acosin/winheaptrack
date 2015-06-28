@@ -1,24 +1,18 @@
-Heapy
+winheaptrack
 =====
 
-Heapy is a very simple heap profiler (or memory profiler) for windows applications.
+winheaptrack is a very simple heap profiler (or memory profiler) for windows applications with [heaptrack](http://milianw.de/blog/heaptrack-a-heap-memory-profiler-for-linux) compatible output.
 
 It lets you see what parts of an application are allocating the most memory.
 
-Heapy supports 32 and 64 bit applications written in C/C++. You do not need to modify your application in any way to use Heapy.
+winheaptrack supports 32 and 64 bit applications written in C/C++. You do not need to modify your application in any way to use winheaptrack.
 
-Heapy will hook and profile any `malloc` and `free` functions it can find. This will in turn cause `new` and `delete` to be profiled too (at least on MSVC `new` and `delete` call `malloc` and `free`.)
-
-Download
---------
-
-You can download the latest release of heapy [here.](http://lukedodd.com/projects/Heapy%20Version%200.1.zip)
-
+winheaptrack will hook and profile any `malloc` and `free` functions it can find. This will in turn cause `new` and `delete` to be profiled too (at least on MSVC `new` and `delete` call `malloc` and `free`.)
 
 Build
 -----
 
-Simply clone this repository and build the `Heapy.sln` in Visual Studio 2012. More recent versions of visual studio should work, older versions will not.
+Simply clone this repository and build the `winheaptrack.sln` in Visual Studio 2012. More recent versions of visual studio should work, older versions will not.
 
 Be sure to select the correct configuration for your needs: a release Win32 or x64 configuration depending on whether you want to profile 32 or 64 bit applications.
 
@@ -26,30 +20,28 @@ Be sure to select the correct configuration for your needs: a release Win32 or x
 Usage
 -----
 
-Once Heapy is built the executables are put into the Release directory. To profile an application simply run Heapy.exe with the first argument as the path to the exe you wish to profile. Make sure that the debug database (`.pdb` file) is in the same directory as your target application so that you get symbol information in your stack traces. You can profile release builds but profiling debug or unoptimised builds gives the nicest stack traces.
+Once winheaptrack is built the executables are put into the Release directory. To profile an application simply run winheaptrack.exe with the first argument as the path to the exe you wish to profile. Make sure that the debug database (`.pdb` file) is in the same directory as your target application so that you get symbol information in your stack traces. You can profile release builds but profiling debug or unoptimised builds gives the nicest stack traces.
 
 ```
-Heapy_x64.exe C:\Windows\SysWOW64\notepad.exe
+winheaptrack_x64.exe C:\Windows\SysWOW64\notepad.exe
 ```
 
-By default Heapy will run the given executable from the same folder as that executable. You can specify a working directory with an optional second argument:
+By default winheaptrack will run the given executable from the same folder as that executable. You can specify a working directory with an optional second argument:
 
 ```
-Heapy_x64.exe C:\Windows\SysWOW64\notepad.exe C:\A\Working\Dir
+winheaptrack_x64.exe C:\Windows\SysWOW64\notepad.exe C:\A\Working\Dir
 ```
 
-Remember to call `Heapy_x64.exe` to profile 64 bit applications and `Heapy_Win32.exe` to profile 32 bit applications. 
+Remember to call `winheaptrack_x64.exe` to profile 64 bit applications and `winheaptrack_Win32.exe` to profile 32 bit applications. 
 
 Results
 -------
 
-Once your application is running Heapy will start writing profiling results to the `Heapy_Profile.txt` file in the applications working directory.
+Once your application is running winheaptrack will start writing profiling results to a file called "winheaptrack.%FILENAME%.%PID%" in the applications working directory, where FILENAME is the name of the executable and PID was the process id for the run.
 
-Every 10 seconds and on the termination of your program information will be added to the report.
+Every 10 milliseconds and on the termination of your program information will be added to the report.
 
-Currently the report is very simple. Allocations are collated on a per stack trace basis. Each time we add information to the report we simply write out the top 25 allocating stack traces and the amount of memory they allocated.
-
-Note that Heapy always *appends* to a report. You will have to delete/rename `Heapy_Profile.txt` or just scroll to the bottom when repeatedly profiling. 
+Currently to view the output you have to copy it to a Linux system and run heaptrack_print to interpret the results. The upside is you can also use heaptrack_print to generate [massif](http://valgrind.org/docs/manual/ms-manual.html) compatible output, allowing you to also view results in the excellent [massif-visualizer](http://valgrind.org/docs/manual/ms-manual.html).
 
 Example
 -------
@@ -83,64 +75,73 @@ int main()
 }
 ```
 
-Gave the following two reports in `Heapy_Profile.txt` after being run with heapy:
-
-```
-=======================================
-
-Printing top allocation points.
-
-< Trimmed out very small allocations from std::streams >
-
-Alloc size 1Mb, stack trace: 
-    NonLeakyFunction    e:\sourcedirectory\heapy\testapplication\main.cpp:9    (000000013FEC1D7E)
-    main    e:\sourcedirectory\heapy\testapplication\main.cpp:22    (000000013FEC1E0D)
-    __tmainCRTStartup    f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crt0.c:241    (000000013FEC67FC)
-    BaseThreadInitThunk    (00000000779A652D)
-    RtlUserThreadStart    (0000000077ADC541)
-
-Alloc size 25Mb, stack trace: 
-    LeakyFunction    e:\sourcedirectory\heapy\testapplication\main.cpp:6    (000000013FEC1D5E)
-    main    e:\sourcedirectory\heapy\testapplication\main.cpp:20    (000000013FEC1E06)
-    __tmainCRTStartup    f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crt0.c:241    (000000013FEC67FC)
-    BaseThreadInitThunk    (00000000779A652D)
-    RtlUserThreadStart    (0000000077ADC541)
-
-Top 13 allocations: 26.005Mb
-Total allocations: 26.005Mb (difference between total and top 13 allocations : 0Mb)
-
-=======================================
-
-Printing top allocation points.
-
-< Trimmed out very small allocations from std::streams >
-
-Alloc size 25Mb, stack trace: 
-    LeakyFunction    e:\sourcedirectory\heapy\testapplication\main.cpp:6    (000000013FEC1D5E)
-    main    e:\sourcedirectory\heapy\testapplication\main.cpp:20    (000000013FEC1E06)
-    __tmainCRTStartup    f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crt0.c:241    (000000013FEC67FC)
-    BaseThreadInitThunk    (00000000779A652D)
-    RtlUserThreadStart    (0000000077ADC541)
-
-Top 5 allocations: 25.005Mb
-Total allocations: 25.005Mb (difference between total and top 5 allocations : 0Mb)
-
+Running heaptrack_print out the output produces the following report (with extraneous stack traces removed):
 
 ```
 
-The first allocation report shows stack traces for both the leaky and non leaky alloc - it was taken before the non leaky alloc was freed so shows that 1Mb as in use. Note that the LeakyFunction allocation size was taken as the sum of all the calls to it from the loop. Also note that the LeakyFuncion alloc is the only allocation shown by the final report (which is generated on application exit) since these mallocs were never cleaned up!
+reading file "winheaptrack.TestApplication_x64.5336" - please wait, this might take some time...
+Debuggee command was: C
+finished reading file, now analyzing data:
 
-You can run Heapy on the test application above by building the `ProfileTestApplication` project in the solution (you must manually click to build that project, it's not set to build on "Build All".)
+MOST CALLS TO ALLOCATION FUNCTIONS
+5 calls to allocation functions with 26.21MB peak consumption from
+LeakyFunction
+  at c:\git\winheaptrack\testapplication\main.cpp:6
+  in TestApplication_x64
+5 calls with 26.21MB peak consumption from:
+    main
+      at c:\git\winheaptrack\testapplication\main.cpp:20
+      in TestApplication_x64
+
+1 calls to allocation functions with 1.05MB peak consumption from
+NonLeakyFunction
+  at c:\git\winheaptrack\testapplication\main.cpp:9
+  in TestApplication_x64
+1 calls with 1.05MB peak consumption from:
+    main
+      at c:\git\winheaptrack\testapplication\main.cpp:22
+      in TestApplication_x64
+
+
+PEAK MEMORY CONSUMERS
+
+WARNING - the data below is not an accurate calcuation of the total peak consumption and can easily be wrong.
+ For an accurate overview, disable backtrace merging.
+26.21MB peak memory consumed over 5 calls from
+LeakyFunction
+  at c:\git\winheaptrack\testapplication\main.cpp:6
+  in TestApplication_x64
+26.21MB consumed over 5 calls from:
+    main
+      at c:\git\winheaptrack\testapplication\main.cpp:20
+      in TestApplication_x64
+
+1.05MB peak memory consumed over 1 calls from
+NonLeakyFunction
+  at c:\git\winheaptrack\testapplication\main.cpp:9
+  in TestApplication_x64
+1.05MB consumed over 1 calls from:
+    main
+      at c:\git\winheaptrack\testapplication\main.cpp:22
+      in TestApplication_x64
+
+total runtime: 15.09s.
+bytes allocated in total (ignoring deallocations): 27.27MB (1.81MB/s)
+calls to allocation functions: 11 (0/s)
+peak heap memory consumption: 27.26MB
+total memory leaked: 26.21MB
+
+
+```
+
+You can run winheaptrack on the test application above by building the `ProfileTestApplication` project in the solution (you must manually click to build that project, it's not set to build on "Build All".)
 
 How It Works
 -----------
 
-This [blog post](http://www.lukedodd.com/heapy-heap-profiler/) describes Heapy in detail.
+winheaptrack is based on Heapy. This [blog post](http://www.lukedodd.com/Heapy-heap-profiler/) describes Heapy in detail.
 
 Future
 ------
 
-Right now Heapy is pretty much a proof of concept. I wanted to prove that robustly hooking the memory allocation functions in unmodified applications was possible. Now there are many possibilities!
-
-Heapy could be extended to be a much more fully featured heap profiler quite easily. I hope to add at least more fully featured and configurable reporting. Ideally Heapy would be extended to have a GUI which would let users explore and visualise profiling results as the application is running.
-
+A GUI for viewing output reports is planned.
