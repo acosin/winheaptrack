@@ -33,7 +33,17 @@ void StackTrace::trace(ProfileData &data){
 		if (backtrace[i]){
 			// Output stack frame symbols if available.
 			if (SymGetSymFromAddr(process, (DWORD64)backtrace[i], 0, symbol)){
-				symidx =  data.intern(symbol->Name);
+				std::string symbol_name = symbol->Name;
+				if (strncmp("mallocHook<", symbol->Name, 11) == 0)
+				{
+					symbol_name = "malloc";
+				}
+				if (strncmp("freeHook<", symbol->Name, 9) == 0)
+				{
+					symbol_name = "free";
+				}
+
+				symidx =  data.intern(symbol_name);
 
 				if (SymGetModuleInfo(process, (DWORD64)backtrace[i], &module))
 				{
