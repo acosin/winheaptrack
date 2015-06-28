@@ -18,7 +18,7 @@
     <ClCompile Include="HeapProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HeapyInject.cpp">
+    <ClCompile Include="winheaptrack_inject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

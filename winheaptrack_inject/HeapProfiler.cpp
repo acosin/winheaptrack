@@ -83,7 +83,7 @@ HeapProfiler::HeapProfiler()
 	wchar_t baseName[MAX_PATH];
 	GetModuleFileName(NULL, processName, sizeof(processName));
 	_wsplitpath(processName, NULL, NULL, baseName, NULL);
-	sprintf(fileName, "heapy.%S.%d", baseName, GetCurrentProcessId());
+	sprintf(fileName, "winheaptrack.%S.%d", baseName, GetCurrentProcessId());
 	printf("Saving data to %s...\n", fileName);
 	data.output = fopen(fileName, "w+b");
 	fprintf(data.output, "X %s\n", processName);

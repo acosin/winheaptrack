@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Heapy.cpp">
+    <ClCompile Include="winheaptrack.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

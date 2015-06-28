@@ -66,7 +66,7 @@ std::string getDirectoryOfFile(const std::string &file){
 extern "C" int main(int argc, char* argv[]){
 	if(argc < 2){
 		std::cout << "No exe specified!\n\n";
-		std::cout << "Usage: Heapy <exe path> [target working dir]\n\n"
+		std::cout << "Usage: winheaptrack <exe path> [target working dir]\n\n"
 		             "       The first argument specifies the exe to launch.\n"
 		             "       The second optional argument specifies the working directory\n"
 		             "       of the exe to launch (this defaults to directory of exe.)\n";
@@ -87,15 +87,15 @@ extern "C" int main(int argc, char* argv[]){
 		win64 = true;
 	#endif
 	// Select correct dll name depending on whether x64 or win32 version launched.
-	std::string heapyInjectDllName;
+	std::string winheaptrackInjectDllName;
 	if(win64)
-		heapyInjectDllName = "HeapyInject_x64.dll";
+		winheaptrackInjectDllName = "winheaptrack_inject_x64.dll";
 	else
-		heapyInjectDllName = "HeapyInject_Win32.dll";
+		winheaptrackInjectDllName = "winheaptrack_inject_Win32.dll";
 
 	// Assume that the injection payload dll is in the same directory as the exe.
 	std::string exePath(argv[0]);
-	std::string dllPath = getDirectoryOfFile(exePath) + "\\" + heapyInjectDllName;
+	std::string dllPath = getDirectoryOfFile(exePath) + "\\" + winheaptrackInjectDllName;
 
 	// Start our new process with a suspended main thread.
 	std::cout << "Starting process with heap profiling enabled..." << std::endl;
@@ -135,7 +135,7 @@ extern "C" int main(int argc, char* argv[]){
 	ResumeThread(pi.hThread);
 
 	// Wait for the target application to exit. 
-	// This doesn't matter to much, but makes heapy nicer to use in test scripts.
+	// This doesn't matter to much, but makes winheaptrack nicer to use in test scripts.
 	// (Like the ProfileTestApplication project.)
 	WaitForSingleObject(pi.hProcess, INFINITE);
 	return 0;
