@@ -13,7 +13,7 @@
 #include "MinHook.h"
 #include "dbghelp.h"
 #include <tlhelp32.h>
-
+#include <chrono>
 typedef void * (__cdecl *PtrMalloc)(size_t);
 typedef void (__cdecl *PtrFree)(void *);
 
@@ -180,6 +180,7 @@ void setupHeapProfiling(){
 
 	// Trawl though loaded modules and hook any mallocs and frees we find.
 	SymEnumerateModules(GetCurrentProcess(), enumModulesCallback, NULL);
+	heapProfiler->data.start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
 }
 
 extern "C"{

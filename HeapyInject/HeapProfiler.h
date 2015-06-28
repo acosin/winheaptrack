@@ -69,6 +69,8 @@ struct ProfileData {
 	InstructionGraph instGraph;
 	std::unordered_map<std::string, size_t> strings;
 	std::unordered_map<StackHash, int> stacks;
+	std::chrono::milliseconds start_time;
+
 	int intern(std::string str)
 	{
 		if (str.empty())return 0;

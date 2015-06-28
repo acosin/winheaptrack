@@ -1,10 +1,5 @@
 #include "HeapProfiler.h"
-
-#include <Windows.h>
 #include <stdio.h>
-#include "dbghelp.h"
-
-#include <algorithm>
 #include <iomanip>
 
 StackTrace::StackTrace() : hash(0){
@@ -86,7 +81,8 @@ HeapProfiler::HeapProfiler()
 void HeapProfiler::malloc(void *ptr, size_t size, const StackTrace &trace){
 	std::lock_guard<std::mutex> lk(mutex);
 	fprintf(data.output, "+ %lx %lx %lx\n", size, trace.index(), reinterpret_cast<uintptr_t>(ptr));
-
+	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - data.start_time;
+	fprintf(data.output, "c %lx\n", duration);
 	// Store the stracktrace hash of this allocation in the pointers map.
 	ptrs[ptr] = trace.hash;
 }
@@ -100,6 +96,8 @@ void HeapProfiler::free(void *ptr, const StackTrace &trace){
 	if(it != ptrs.end()){
 		ptrs.erase(it);
 		fprintf(data.output, "- %lx\n", reinterpret_cast<uintptr_t>(ptr));
+		std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - data.start_time;
+		fprintf(data.output, "c %lx\n", duration);
 	}else{
 		// Do anything with wild pointer frees?
 	}
