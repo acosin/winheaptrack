@@ -67,9 +67,20 @@ private:
 struct ProfileData {
 	FILE* output;
 	InstructionGraph instGraph;
+	HANDLE timer;
 	std::unordered_map<std::string, size_t> strings;
 	std::unordered_map<StackHash, int> stacks;
 	std::chrono::milliseconds start_time;
+
+	ProfileData()
+	{
+		CreateTimerQueueTimer(&timer, NULL, ProfileData::do_tick, this, 0, 10, 0);
+	}
+
+	~ProfileData()
+	{
+		DeleteTimerQueueTimer(NULL, timer, NULL);
+	}
 
 	int intern(std::string str)
 	{
@@ -81,6 +92,18 @@ struct ProfileData {
 		strings.insert(interned, std::make_pair(str, val));
 		fprintf(output, "s %s\n", str.c_str());
 		return val;
+	}
+
+	void tick()
+	{
+		std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - start_time;
+		fprintf(output, "c %lx\n", duration);
+	}
+
+	static void CALLBACK do_tick(void* arg, BOOLEAN TimerWaitOrFired)
+	{
+		ProfileData* data = (ProfileData*)arg;
+		data->tick();
 	}
 
 };

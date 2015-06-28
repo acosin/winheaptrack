@@ -11,7 +11,7 @@ int StackTrace::index() const {
 }
 
 void StackTrace::trace(ProfileData &data){
-	CaptureStackBackTrace(1, backtraceSize, backtrace, &hash);
+	CaptureStackBackTrace(0, backtraceSize, backtrace, &hash);
 	auto stk = data.stacks.find(hash);
 	if (stk != data.stacks.end()) { idx = stk->second; return; };
 	HANDLE process = GetCurrentProcess();
@@ -81,8 +81,7 @@ HeapProfiler::HeapProfiler()
 void HeapProfiler::malloc(void *ptr, size_t size, const StackTrace &trace){
 	std::lock_guard<std::mutex> lk(mutex);
 	fprintf(data.output, "+ %lx %lx %lx\n", size, trace.index(), reinterpret_cast<uintptr_t>(ptr));
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - data.start_time;
-	fprintf(data.output, "c %lx\n", duration);
+	data.tick();
 	// Store the stracktrace hash of this allocation in the pointers map.
 	ptrs[ptr] = trace.hash;
 }
@@ -96,8 +95,7 @@ void HeapProfiler::free(void *ptr, const StackTrace &trace){
 	if(it != ptrs.end()){
 		ptrs.erase(it);
 		fprintf(data.output, "- %lx\n", reinterpret_cast<uintptr_t>(ptr));
-		std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - data.start_time;
-		fprintf(data.output, "c %lx\n", duration);
+		data.tick();
 	}else{
 		// Do anything with wild pointer frees?
 	}
