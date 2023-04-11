@@ -29,7 +29,7 @@
 #include <cassert>
 #include <vector>
 #include <Windows.h>
-#include "pstdint.h"
+#include <stdint.h>
 #include <algorithm>
 
 #if defined _M_X64

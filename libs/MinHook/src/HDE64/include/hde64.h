@@ -19,8 +19,7 @@
  * and change next line to:
  *   #include "pstdint.h"
  */
-/* #include <stdint.h> */
-#include "../../pstdint.h"
+#include <stdint.h>
 
 #define F_MODRM         0x00000001
 #define F_SIB           0x00000002
@@ -41,6 +40,9 @@
 #define F_PREFIX_REPX   0x02000000
 #define F_PREFIX_REP    0x03000000
 #define F_PREFIX_66     0x04000000
+
+
+
 #define F_PREFIX_67     0x08000000
 #define F_PREFIX_LOCK   0x10000000
 #define F_PREFIX_SEG    0x20000000
